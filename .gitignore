@@ -1,0 +1,38 @@
+# ===== Java / Maven =====
+target/
+*.class
+build/
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Node / frontend =====
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.vite/
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE / editor =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# ===== Environment & secrets =====
+.env
+.env.local
+.env.*.local
+application-local.yml
+application-local.yaml
+
+# ===== Temporary / generated =====
+*.tmp
+*.bak
+hs_err_pid*

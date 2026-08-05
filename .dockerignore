@@ -1,0 +1,9 @@
+target/
+frontend/
+node_modules/
+.git/
+.idea/
+*.iml
+.DS_Store
+.env
+*.md

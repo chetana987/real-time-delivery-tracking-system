@@ -1,0 +1,95 @@
+# CI for delivery-tracking
+#
+# Runs on every push to `main` and on every pull request targeting `main`.
+# The `build` job compiles the backend and runs the full test suite
+# (`mvn clean verify`); the `docker-build` job verifies the Docker image
+# still builds (it is never pushed to a registry).
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  # Allow a manual re-run from the Actions tab (useful for debugging).
+  workflow_dispatch:
+
+# Cancel superseded runs for the same branch/PR so only the newest commit
+# consumes runner time.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: this workflow never needs write access to the repository.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, compile and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-${{ runner.os }}-
+
+      # Non-interactive (-B), no transfer progress (-ntp). A non-zero exit
+      # code from Maven fails this step immediately, which fails the job and
+      # the whole workflow (compilation error or failing test => red build).
+      - name: Run mvn clean verify
+        run: mvn -B -ntp clean verify
+
+      # Only interesting when the build is red: attach surefire reports so the
+      # failure can be inspected without re-running everything locally.
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports
+          if-no-files-found: ignore
+
+  docker-build:
+    name: Verify Docker image builds
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # push: false => build only. The image is loaded into the local Docker
+      # daemon so the build is fully verified, then discarded. Nothing is
+      # pushed to Docker Hub or any other registry.
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: delivery-tracking:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

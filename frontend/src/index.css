@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Warm food-delivery palette.
+   Primary: terracotta/orange. Text: warm charcoal. BG: cream.
+   No blue. No purple. No teal (that is the ride-tracking alt palette).
+------------------------------------------------------------------- */
+@theme {
+  --color-terra-50: #fdf5f2;
+  --color-terra-100: #fbe8e1;
+  --color-terra-200: #f7d0c3;
+  --color-terra-300: #f0ab96;
+  --color-terra-400: #e8846a;
+  --color-terra-500: #e2725b; /* terracotta */
+  --color-terra-600: #c95f4a;
+  --color-terra-700: #a94b3a;
+  --color-terra-800: #8a3f33;
+  --color-terra-900: #6f332b;
+
+  --color-cream-50: #faf6f0;
+  --color-cream-100: #f3ecdf;
+  --color-cream-200: #e8ddc9;
+
+  --color-charcoal-900: #221d1a;
+  --color-charcoal-800: #2d2622;
+  --color-charcoal-700: #3e352f;
+  --color-charcoal-600: #4f443d;
+
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  @apply bg-cream-50 text-charcoal-900 antialiased;
+}
+
+/* Leaflet map must not fight Tailwind's z-index layers */
+.leaflet-container {
+  z-index: 0;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 400;
+}
+
+/* Custom pulsing delivery marker */
+.delivery-marker {
+  background: transparent;
+  border: none;
+}
+.marker-dot {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #e2725b;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 4px rgba(226, 114, 91, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.marker-dot::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  background: rgba(226, 114, 91, 0.25);
+  animation: marker-pulse 1.8s ease-out infinite;
+}
+@keyframes marker-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Destination pin */
+.marker-destination {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 4px solid #2d2622;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
