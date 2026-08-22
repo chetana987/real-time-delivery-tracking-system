@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.GeoResult;
 import org.springframework.data.geo.GeoResults;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
@@ -81,10 +80,9 @@ public class PartnerGeoService {
             }
 
             return results.getContent().stream()
-                    .map(GeoResult::getContent)
-                    .map(loc -> NearbyPartner.builder()
-                            .deliveryPartnerId(Long.valueOf(loc.getName()))
-                            .distanceKm(loc.getDistance() != null ? loc.getDistance().getValue() : null)
+                    .map(result -> NearbyPartner.builder()
+                            .deliveryPartnerId(Long.valueOf(result.getContent().getName()))
+                            .distanceKm(result.getDistance() != null ? result.getDistance().getValue() : null)
                             .build())
                     .toList();
         } catch (RuntimeException e) {
