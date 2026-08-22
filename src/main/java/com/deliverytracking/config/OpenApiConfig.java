@@ -1,6 +1,5 @@
 package com.deliverytracking.config;
 
-import io.swagger.v3.oas.annotations.Components;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
@@ -17,6 +16,14 @@ import org.springframework.context.annotation.Configuration;
  * endpoint groups shown in the UI.
  */
 @Configuration
+@SecurityScheme(
+        name = "bearerAuth",
+        type = SecuritySchemeType.HTTP,
+        scheme = "bearer",
+        bearerFormat = "JWT",
+        description = "JWT access token returned by /api/auth/login or /api/auth/register. "
+                + "Paste the raw token (no 'Bearer ' prefix required)."
+)
 @OpenAPIDefinition(
         info = @Info(
                 title = "Delivery Tracking System API",
@@ -38,16 +45,6 @@ import org.springframework.context.annotation.Configuration;
                         name = "Delivery Tracking Team",
                         email = "dev@deliverytracking.local",
                         url = "https://github.com/deliverytracking"
-                )
-        ),
-        components = @Components(
-                securitySchemes = @SecurityScheme(
-                        name = "bearerAuth",
-                        type = SecuritySchemeType.HTTP,
-                        scheme = "bearer",
-                        bearerFormat = "JWT",
-                        description = "JWT access token returned by /api/auth/login or /api/auth/register. "
-                                + "Paste the raw token (no 'Bearer ' prefix required)."
                 )
         ),
         tags = {

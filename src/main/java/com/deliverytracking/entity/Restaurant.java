@@ -42,6 +42,7 @@ public class Restaurant {
     @Column(nullable = false)
     private Double lng;
 
+    @Builder.Default
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItem> menu = new ArrayList<>();
 

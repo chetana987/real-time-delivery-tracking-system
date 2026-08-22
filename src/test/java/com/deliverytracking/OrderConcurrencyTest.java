@@ -67,8 +67,10 @@ class OrderConcurrencyTest extends AbstractIntegrationTest {
                             .price(new BigDecimal("9.99"))
                             .build();
                     restaurant.addMenuItem(item);
-                    restaurantRepository.save(restaurant);
-                    return item;
+                    return restaurantRepository.save(restaurant).getMenu().stream()
+                            .filter(menuItem -> menuItem.getName().equals("Burger"))
+                            .findFirst()
+                            .orElseThrow();
                 });
 
         User customer = userRepository.save(User.builder()

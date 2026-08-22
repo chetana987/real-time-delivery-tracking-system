@@ -47,6 +47,7 @@ public class OrderResponse {
     private Instant updatedAt;
 
     @Schema(description = "Nearby online delivery partners, present on orders in PLACED state")
+    @Builder.Default
     private List<NearbyPartner> nearbyPartners = List.of();
 
     public static OrderResponse from(Order order) {
