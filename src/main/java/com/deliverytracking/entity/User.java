@@ -57,9 +57,11 @@ public class User {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "customer")
     private List<Order> customerOrders = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "deliveryPartner")
     private List<Order> assignedOrders = new ArrayList<>();
 }
