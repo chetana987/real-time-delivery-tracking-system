@@ -58,8 +58,10 @@ public class User {
     private Instant createdAt;
 
     @OneToMany(mappedBy = "customer")
+    @Builder.Default
     private List<Order> customerOrders = new ArrayList<>();
 
     @OneToMany(mappedBy = "deliveryPartner")
+    @Builder.Default
     private List<Order> assignedOrders = new ArrayList<>();
 }

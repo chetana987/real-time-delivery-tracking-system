@@ -39,6 +39,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    /**
+     * Development frontend origins allowed for HTTP CORS and WebSocket/SockJS
+     * handshakes. Kept in one place so both sources never drift apart.
+     */
+    public static final List<String> ALLOWED_FRONTEND_ORIGINS =
+            List.of("http://localhost:3000", "http://localhost:5173");
+
     private final ObjectMapper objectMapper;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -88,7 +95,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        configuration.setAllowedOrigins(ALLOWED_FRONTEND_ORIGINS);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

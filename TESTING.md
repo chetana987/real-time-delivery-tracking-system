@@ -97,7 +97,9 @@ src/test/java/com/deliverytracking/
     ├── RestaurantCrudIntegrationTest.java          # restaurant + menu CRUD, auth rules, validation, delete-with-orders
     ├── GlobalExceptionHandlingIntegrationTest.java # 404/400/401/403 mappings for the @RestControllerAdvice
     ├── OpenApiDocumentationIntegrationTest.java    # /v3/api-docs metadata + tags + JWT scheme, pagination query params
-    └── PaginationFilteringIntegrationTest.java     # page metadata, paging, sorting, filters, validation errors
+    ├── PaginationFilteringIntegrationTest.java     # page metadata, paging, sorting, filters, validation errors
+    └── LocationTrackingIntegrationTest.java        # latest location: 200 with update, 404 when none, 404 missing
+                                                    #   order, 400 invalid id, 403 non-participant, 401 unauth
 ```
 
 ### Business rules verified
@@ -149,7 +151,7 @@ mvn test
 mvn test -Dtest='OrderStateTransitionTest,OrderServiceAcceptanceTest,OptimisticLockingTest,JwtServiceTest'
 
 # integration tests only (Docker or local MySQL required)
-mvn test -Dtest='AuthFlowIntegrationTest,OrderFlowIntegrationTest,RestaurantCrudIntegrationTest,GlobalExceptionHandlingIntegrationTest,OrderConcurrencyTest,OpenApiDocumentationIntegrationTest,PaginationFilteringIntegrationTest'
+mvn test -Dtest='AuthFlowIntegrationTest,OrderFlowIntegrationTest,RestaurantCrudIntegrationTest,GlobalExceptionHandlingIntegrationTest,OrderConcurrencyTest,OpenApiDocumentationIntegrationTest,PaginationFilteringIntegrationTest,LocationTrackingIntegrationTest'
 
 # one class
 mvn test -Dtest=OrderFlowIntegrationTest

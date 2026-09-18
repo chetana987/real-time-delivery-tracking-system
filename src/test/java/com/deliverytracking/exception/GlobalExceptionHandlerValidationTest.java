@@ -53,6 +53,19 @@ class GlobalExceptionHandlerValidationTest {
         assertThat(response.getBody().getFieldErrors()).isNull();
     }
 
+    @Test
+    void emailAlreadyExists_mapsTo409WithStructuredError() {
+        ResponseEntity<ApiError> response = handler.handleEmailAlreadyExists(
+                new EmailAlreadyExistsException("Email already registered: dup@test.com"), request());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(409);
+        assertThat(response.getBody().getError()).isEqualTo("Conflict");
+        assertThat(response.getBody().getMessage()).isEqualTo("Email already registered: dup@test.com");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/orders");
+    }
+
     private MockHttpServletRequest request() {
         return new MockHttpServletRequest("GET", "/api/orders");
     }

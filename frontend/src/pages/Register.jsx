@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../lib/auth';
 
 const ROLES = [
@@ -129,9 +130,8 @@ export default function Register() {
             <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-charcoal-900">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="new-password"
               className={inputClass}
               placeholder="At least 6 characters"

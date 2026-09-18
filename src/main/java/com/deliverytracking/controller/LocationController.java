@@ -38,9 +38,10 @@ public class LocationController {
 
     @GetMapping
     @Operation(summary = "Get the latest location of an order",
-            description = "Returns the most recent delivery-partner location recorded for the order.")
+            description = "Returns the most recent delivery-partner location recorded for the order. "
+                    + "If the order exists but no location update has been recorded yet, 404 is returned.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Latest known location (or null fields if none yet)",
+            @ApiResponse(responseCode = "200", description = "Most recent location update for the order",
                     content = @Content(schema = @Schema(implementation = LocationUpdateMessage.class))),
             @ApiResponse(responseCode = "400", description = "Invalid path variable or validation error",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -48,7 +49,7 @@ public class LocationController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Not authorized for this order",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Order not found",
+            @ApiResponse(responseCode = "404", description = "No location update recorded for the order, or the order was not found",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public LocationUpdateMessage getLatestLocation(@PathVariable @Positive Long orderId,

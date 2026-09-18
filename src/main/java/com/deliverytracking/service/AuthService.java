@@ -10,6 +10,8 @@ import com.deliverytracking.exception.EmailAlreadyExistsException;
 import com.deliverytracking.exception.InvalidCredentialsException;
 import com.deliverytracking.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -43,8 +45,39 @@ public class AuthService {
                 .phone(request.getPhone())
                 .build();
 
-        userRepository.save(user);
+        try {
+            // Flush immediately: if another request created this email in between, the
+            // unique constraint fires here (DataIntegrityViolationException) instead of
+            // surfacing as a 500 at transaction commit.
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            if (isEmailUniqueViolation(e)) {
+                throw new EmailAlreadyExistsException("Email already registered: " + request.getEmail());
+            }
+            throw e;
+        }
         return buildAuthResponse(user);
+    }
+
+    private boolean isEmailUniqueViolation(DataIntegrityViolationException ex) {
+        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException cve) {
+                String name = cve.getConstraintName();
+                if (name != null && name.contains("idx_users_email")) {
+                    return true;
+                }
+                if (name != null) {
+                    return false; // failing constraint is unrelated to email
+                }
+            }
+            if (cause instanceof java.sql.SQLException sqlException) {
+                String message = sqlException.getMessage();
+                if (message != null && message.contains("idx_users_email")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Transactional(readOnly = true)

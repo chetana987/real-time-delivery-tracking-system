@@ -19,7 +19,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.utility.DockerClientFactory;
+import org.testcontainers.DockerClientFactory;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -115,6 +115,9 @@ public abstract class AbstractIntegrationTest {
         }
         registry.add("spring.datasource.driver-class-name", () -> "com.mysql.cj.jdbc.Driver");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        // app.jwt.secret is REQUIRED at runtime (no fallback in application.yml);
+        // integration tests supply a deterministic test-only value.
+        registry.add("app.jwt.secret", () -> "test-secret-key-for-integration-tests-0000000000");
     }
 
     @Autowired

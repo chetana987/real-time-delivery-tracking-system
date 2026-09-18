@@ -93,7 +93,7 @@ or GitHub Secrets.
 | `MYSQL_USER` / `MYSQL_PASSWORD` | `root` / `root` | MySQL credentials |
 | `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | Redis host/port |
 | `REDIS_PASSWORD` | *(empty)* | Redis password |
-| `JWT_SECRET` | *dev placeholder* | HS256 signing key, **≥ 32 bytes** (e.g. `openssl rand -hex 32`) |
+| `JWT_SECRET` | *(required — no default)* | HS256 signing key, **≥ 32 bytes** (e.g. `openssl rand -hex 32`), must be set or the app refuses to start |
 | `JWT_EXPIRATION_MS` | `86400000` | Access-token lifetime in ms |
 | `PARTNER_SEARCH_RADIUS_KM` | `10` | Radius to find nearby online partners on placement |
 | `LOCATION_UPDATE_MIN_INTERVAL_SECONDS` | `2` | Min interval between partner location updates |
@@ -103,9 +103,12 @@ or GitHub Secrets.
 Start MySQL and Redis (e.g. via the Compose services), then:
 
 ```bash
+export JWT_SECRET=$(openssl rand -hex 32)  # or use your .env value
 mvn spring-boot:run          # backend on http://localhost:8080
 cd frontend && npm run dev   # frontend on http://localhost:5173 (proxies /api)
 ```
+
+> `JWT_SECRET` is required — the backend will not start without it.
 
 The admin account is seeded automatically on first start:
 

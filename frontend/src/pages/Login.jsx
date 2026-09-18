@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../lib/auth';
 
 function homeFor(user) {
@@ -83,9 +84,8 @@ export default function Login() {
             <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-charcoal-900">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               className={inputClass}
               placeholder="••••••••"

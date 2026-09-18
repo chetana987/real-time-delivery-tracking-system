@@ -81,10 +81,9 @@ public class PartnerGeoService {
             }
 
             return results.getContent().stream()
-                    .map(GeoResult::getContent)
-                    .map(loc -> NearbyPartner.builder()
-                            .deliveryPartnerId(Long.valueOf(loc.getName()))
-                            .distanceKm(loc.getDistance() != null ? loc.getDistance().getValue() : null)
+                    .map(result -> NearbyPartner.builder()
+                            .deliveryPartnerId(Long.valueOf(result.getContent().getName()))
+                            .distanceKm(result.getDistance() != null ? result.getDistance().getValue() : null)
                             .build())
                     .toList();
         } catch (RuntimeException e) {

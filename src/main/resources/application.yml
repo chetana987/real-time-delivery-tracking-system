@@ -14,7 +14,7 @@ spring:
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:delivery_tracking}?createDatabaseIfNotExist=true&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
     username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:root}
+    password: ${MYSQL_PASSWORD:chetana}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -56,8 +56,11 @@ springdoc:
 # ===================== JWT =====================
 app:
   jwt:
-    # HS256 requires the secret to be at least 32 bytes long
-    secret: ${JWT_SECRET:change-me-please-use-a-long-random-secret-32b+}
+    # HS256 requires the secret to be at least 32 bytes long.
+    # REQUIRED: the secret must be provided via the JWT_SECRET environment
+    # variable. There is intentionally no fallback default, so an unconfigured
+    # secret fails fast at startup instead of silently using a known value.
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   # how far (km) to look for online delivery partners when a new order is placed
   partner-search-radius-km: ${PARTNER_SEARCH_RADIUS_KM:10}
