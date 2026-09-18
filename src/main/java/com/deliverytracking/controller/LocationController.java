@@ -81,7 +81,7 @@ public class LocationController {
             @Parameter(description = "Page size, between 1 and 100", example = "10") int size,
             @RequestParam(required = false)
             @Parameter(description = "Sort field. Allowed: id, timestamp", example = "timestamp") String sortBy,
-            @RequestParam(defaultValue = "asc")
+            @RequestParam(defaultValue = "desc")
             @Parameter(description = "Sort direction: asc or desc", example = "desc") String direction,
             @AuthenticationPrincipal UserPrincipal principal) {
         return locationUpdateService.getLocationHistory(orderId, principal.getId(),

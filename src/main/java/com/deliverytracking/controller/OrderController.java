@@ -72,7 +72,7 @@ public class OrderController {
             @RequestParam(required = false)
             @Parameter(description = "Sort field. Allowed: id, status, totalAmount, createdAt, updatedAt",
                     example = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "asc")
+            @RequestParam(defaultValue = "desc")
             @Parameter(description = "Sort direction: asc or desc", example = "desc") String direction,
             @RequestParam(required = false)
             @Parameter(description = "Filter by order status", example = "DELIVERED") OrderStatus status,
@@ -117,7 +117,7 @@ public class OrderController {
             @RequestParam(required = false)
             @Parameter(description = "Sort field. Allowed: id, status, totalAmount, createdAt, updatedAt",
                     example = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "asc")
+            @RequestParam(defaultValue = "desc")
             @Parameter(description = "Sort direction: asc or desc", example = "desc") String direction,
             @RequestParam(required = false)
             @Parameter(description = "Filter by restaurant id", example = "1") Long restaurant) {

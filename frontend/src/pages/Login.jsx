@@ -51,7 +51,7 @@ export default function Login() {
             Welcome back
           </h1>
           <p className="mt-1 text-sm text-charcoal-600">
-            Log in to Chetana Delivery to track or deliver orders.
+            Log in to Delivery Tracking System by Chetana to track or deliver orders.
           </p>
         </div>
 

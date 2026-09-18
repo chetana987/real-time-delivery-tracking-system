@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
                                                               HttpServletRequest request) {
         Map<String, String> fieldErrors = e.getConstraintViolations().stream()
                 .collect(Collectors.toMap(
-                        v -> v.getPropertyPath().toString(),
+                        v -> normalizeFieldKey(v.getPropertyPath().toString()),
                         ConstraintViolation::getMessage,
                         (a, b) -> a,
                         LinkedHashMap::new));
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors = e.getParameterValidationResults().stream()
                 .collect(Collectors.toMap(
                         r -> {
-                            String name = r.getMethodParameter().getParameterName();
+                            String name = normalizeFieldKey(r.getMethodParameter().getParameterName());
                             return name != null ? name : "arg" + r.getMethodParameter().getParameterIndex();
                         },
                         r -> r.getResolvableErrors().stream()
@@ -146,6 +146,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleGeneric(Exception e, HttpServletRequest request) {
         log.error("Unhandled exception for {} {}", request.getMethod(), request.getRequestURI(), e);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request, null);
+    }
+
+    private String normalizeFieldKey(String name) {
+        if (name != null && name.contains(".")) {
+            int dot = name.lastIndexOf('.');
+            return name.substring(dot + 1);
+        }
+        return name;
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest request,

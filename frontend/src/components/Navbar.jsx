@@ -31,7 +31,7 @@ export default function Navbar() {
             <Logo />
           </span>
           <span className="text-xl font-bold tracking-tight">
-            Chetana <span className="text-terra-500">Delivery</span>
+            Delivery Tracking System <span className="text-terra-500">by Chetana</span>
           </span>
         </Link>
 

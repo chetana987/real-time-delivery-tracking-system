@@ -10,6 +10,7 @@ import com.deliverytracking.entity.Role;
 import com.deliverytracking.entity.User;
 import com.deliverytracking.exception.OptimisticLockConflictException;
 import com.deliverytracking.integration.AbstractIntegrationTest;
+import com.deliverytracking.repository.MenuItemRepository;
 import com.deliverytracking.repository.OrderRepository;
 import com.deliverytracking.repository.RestaurantRepository;
 import com.deliverytracking.repository.UserRepository;
@@ -36,6 +37,8 @@ class OrderConcurrencyTest extends AbstractIntegrationTest {
     private OrderService orderService;
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private MenuItemRepository menuItemRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -67,8 +70,7 @@ class OrderConcurrencyTest extends AbstractIntegrationTest {
                             .price(new BigDecimal("9.99"))
                             .build();
                     restaurant.addMenuItem(item);
-                    restaurantRepository.save(restaurant);
-                    return item;
+                    return menuItemRepository.save(item);
                 });
 
         User customer = userRepository.save(User.builder()

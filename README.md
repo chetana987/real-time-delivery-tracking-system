@@ -1,4 +1,4 @@
-# Chetana Delivery — Delivery Tracking System
+# Delivery Tracking System by Chetana
 
 Real-time food/ride delivery tracking platform: a Spring Boot REST API (orders,
 restaurants, menu, live location tracking over WebSocket/STOMP, JWT auth) with a

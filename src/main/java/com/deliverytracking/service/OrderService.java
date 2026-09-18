@@ -24,6 +24,7 @@ import com.deliverytracking.repository.OrderSpecs;
 import com.deliverytracking.repository.RestaurantRepository;
 import com.deliverytracking.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -132,7 +133,7 @@ public class OrderService {
         try {
             order.transitionTo(OrderStatus.ACCEPTED);
             entityManager.flush();
-        } catch (ObjectOptimisticLockingFailureException e) {
+        } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
             throw new OptimisticLockConflictException("Order " + orderId
                     + " was already accepted by another partner");
         }
@@ -171,7 +172,7 @@ public class OrderService {
         try {
             order.transitionTo(OrderStatus.CANCELLED);
             entityManager.flush();
-        } catch (ObjectOptimisticLockingFailureException e) {
+        } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
             throw new OptimisticLockConflictException("Order " + orderId
                     + " was modified concurrently; refresh and retry");
         }
