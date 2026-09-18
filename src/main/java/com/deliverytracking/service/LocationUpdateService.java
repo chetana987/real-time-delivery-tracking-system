@@ -1,5 +1,6 @@
 package com.deliverytracking.service;
 
+import com.deliverytracking.config.EtaProperties;
 import com.deliverytracking.dto.LocationUpdateMessage;
 import com.deliverytracking.dto.PageParams;
 import com.deliverytracking.dto.PageResponse;
@@ -32,6 +33,7 @@ public class LocationUpdateService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final PartnerGeoService partnerGeoService;
+    private final EtaProperties etaProperties;
 
     private static final Set<String> LOCATION_SORT_FIELDS = Set.of("id", "timestamp");
 
@@ -61,11 +63,16 @@ public class LocationUpdateService {
 
         partnerGeoService.updatePartnerLocation(partnerId, message.getLat(), message.getLng());
 
+        Double distanceKm = GeoDistance.distanceKmOrNull(message.getLat(), message.getLng(),
+                order.getDeliveryLatitude(), order.getDeliveryLongitude());
+
         LocationUpdateMessage outbound = LocationUpdateMessage.builder()
                 .orderId(order.getId())
                 .deliveryPartnerId(partnerId)
                 .lat(message.getLat())
                 .lng(message.getLng())
+                .distanceKm(distanceKm)
+                .etaMinutes(etaMinutes(distanceKm))
                 .timestamp(update.getTimestamp())
                 .build();
 
@@ -89,6 +96,7 @@ public class LocationUpdateService {
         return PageResponse.from(locationUpdateRepository.findByOrderId(orderId, pageable).map(this::toMessage));
     }
 
+    @Transactional(readOnly = true)
     public Optional<LocationUpdateMessage> getLatestLocationForPartner(Long partnerId) {
         return locationUpdateRepository.findFirstByDeliveryPartnerIdOrderByTimestampDesc(partnerId)
                 .map(this::toMessage);
@@ -113,12 +121,20 @@ public class LocationUpdateService {
     }
 
     private LocationUpdateMessage toMessage(LocationUpdate update) {
+        Double distanceKm = GeoDistance.distanceKmOrNull(update.getLat(), update.getLng(),
+                update.getOrder().getDeliveryLatitude(), update.getOrder().getDeliveryLongitude());
         return LocationUpdateMessage.builder()
                 .orderId(update.getOrder().getId())
                 .deliveryPartnerId(update.getDeliveryPartner().getId())
                 .lat(update.getLat())
                 .lng(update.getLng())
+                .distanceKm(distanceKm)
+                .etaMinutes(etaMinutes(distanceKm))
                 .timestamp(update.getTimestamp())
                 .build();
+    }
+
+    private Integer etaMinutes(Double distanceKm) {
+        return EtaCalculator.etaMinutes(distanceKm, etaProperties.getAverageSpeedKmh());
     }
 }

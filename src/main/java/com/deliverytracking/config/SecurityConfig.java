@@ -35,7 +35,7 @@ import java.util.Map;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, EtaProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 

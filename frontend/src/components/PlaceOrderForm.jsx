@@ -222,7 +222,10 @@ export default function PlaceOrderForm({ onPlaced }) {
         </div>
 
         {error && (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 sm:col-span-2">
+          <p
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 sm:col-span-2"
+          >
             {error}
           </p>
         )}

@@ -48,6 +48,7 @@ public class OrderService {
     private final MenuItemRepository menuItemRepository;
     private final EntityManager entityManager;
     private final PartnerGeoService partnerGeoService;
+    private final PartnerAvailabilityService partnerAvailabilityService;
 
     private static final Set<String> ORDER_SORT_FIELDS = Set.of("id", "status", "totalAmount", "createdAt", "updatedAt");
 
@@ -106,19 +107,10 @@ public class OrderService {
     }
 
     private List<NearbyPartner> findNearbyAvailablePartners(Restaurant restaurant) {
-        Set<Long> busyPartnerIds = orderRepository
-                .findDistinctByDeliveryPartnerIdNotNullAndStatusIn(List.of(
-                        OrderStatus.ACCEPTED,
-                        OrderStatus.PICKED_UP,
-                        OrderStatus.OUT_FOR_DELIVERY))
-                .stream()
-                .map(order -> order.getDeliveryPartner().getId())
-                .collect(Collectors.toSet());
-
         return partnerGeoService.findNearestPartners(
                         restaurant.getLat(), restaurant.getLng(), partnerSearchRadiusKm, 5)
                 .stream()
-                .filter(nearby -> !busyPartnerIds.contains(nearby.getDeliveryPartnerId()))
+                .filter(nearby -> partnerAvailabilityService.isAvailable(nearby.getDeliveryPartnerId()))
                 .toList();
     }
 

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import L from 'leaflet';
 import { api, getToken } from '../lib/api';
 import { createStompClient } from '../lib/stomp';
-import { haversineKm, formatKm, formatTime } from '../lib/geo';
+import { haversineKm, formatKm, formatEtaMinutes, formatTime } from '../lib/geo';
 import { useLeafletMap } from '../hooks/useLeafletMap';
 import { useSmoothMarker } from '../hooks/useSmoothMarker';
 import StatusProgress from '../components/StatusProgress';
@@ -23,14 +23,24 @@ export default function TrackOrder() {
   const seededRef = useRef(false);
   const subRef = useRef(null);
   const clientRef = useRef(null);
+  const orderRef = useRef(null);
+  useEffect(() => {
+    orderRef.current = order;
+  }, [order]);
 
+  // A failed first load replaces the page with a full error state; a transient
+  // failure on a later refresh (poll/WS) just shows a banner and keeps tracking.
   const refreshOrder = useCallback(async () => {
     try {
       const data = await api.getOrder(orderId);
       setOrder(data);
       setLoadError('');
     } catch (err) {
-      setLoadError(err.message);
+      if (orderRef.current) {
+        setError(err.message);
+      } else {
+        setLoadError(err.message);
+      }
     }
   }, [orderId]);
 
@@ -159,11 +169,13 @@ export default function TrackOrder() {
   // clean up on unmount or when the order reaches a terminal state.
   useEffect(() => {
     if (!liveEligible) return undefined;
+    let active = true;
     const token = getToken();
     const client = createStompClient(token);
     clientRef.current = client;
 
     client.onConnect = () => {
+      if (!active) return;
       setConnected(true);
       subRef.current = client.subscribe(`/topic/order/${orderId}/location`, (frame) => {
         try {
@@ -186,24 +198,36 @@ export default function TrackOrder() {
     client.activate();
 
     return () => {
+      active = false;
       try {
         subRef.current?.unsubscribe();
       } catch {
         /* noop */
       }
-      clientRef.current = null;
+      subRef.current = null;
+      if (clientRef.current === client) clientRef.current = null;
       client.deactivate();
     };
   }, [orderId, moveTo, refreshOrder, liveEligible]);
 
   let distanceKm = null;
-  if (order && live && destination) {
-    distanceKm = haversineKm(live, destination);
+  let etaMinutes = null;
+  if (order && live && destination && !isTerminal) {
+    // Prefer the server-computed haversine distance (it is always based on the
+    // order's real destination); fall back to a client-side estimate only for
+    // payloads that predate the field.
+    distanceKm = live.distanceKm ?? haversineKm(live, destination);
+    // ETA comes from the server (distance / average speed); never fabricated
+    // client-side, so it is absent when the server has no real destination.
+    etaMinutes = live.etaMinutes ?? null;
   }
 
   if (loadError) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center">
+      <div
+        role="alert"
+        className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center"
+      >
         <p className="font-medium text-red-700">{loadError}</p>
         <Link to="/" className="mt-3 inline-block text-sm font-semibold text-terra-600 hover:text-terra-700">
           Back to dashboard
@@ -250,7 +274,10 @@ export default function TrackOrder() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+        >
           {error}
         </div>
       )}
@@ -292,6 +319,19 @@ export default function TrackOrder() {
             {formatKm(distanceKm)}
           </p>
           <p className="mt-0.5 text-xs text-charcoal-600">Straight-line estimate to destination</p>
+          {etaMinutes != null && (
+            <>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wider text-charcoal-600">
+                Estimated arrival
+              </p>
+              <p className="mt-1 text-2xl font-extrabold text-terra-600">
+                {formatEtaMinutes(etaMinutes)}
+              </p>
+              <p className="mt-0.5 text-xs text-charcoal-600">
+                Estimate from remaining distance — not live traffic
+              </p>
+            </>
+          )}
         </div>
 
         <div className="rounded-2xl border border-cream-200 bg-white p-4 shadow-sm">

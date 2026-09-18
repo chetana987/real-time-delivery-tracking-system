@@ -1,6 +1,19 @@
 const TOKEN_KEY = 'delivery_token';
 const USER_KEY = 'delivery_user';
 
+// Registered by the auth layer so a 401 (expired/invalid JWT) can clear the
+// stale session and route the user to login. Kept as a plain module callback
+// so api.js does not need to import React or a router.
+let unauthorizedHandler = null;
+
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler;
+}
+
+export function clearUnauthorizedHandler() {
+  unauthorizedHandler = null;
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -36,11 +49,18 @@ async function request(path, { method = 'GET', body } = {}) {
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(path, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    const error = new Error('Could not reach the server. Check your connection and try again.');
+    error.status = 0;
+    throw error;
+  }
 
   if (!res.ok) {
     let data = null;
@@ -52,6 +72,13 @@ async function request(path, { method = 'GET', body } = {}) {
     const error = new Error(data?.message || data?.error || `Request failed (${res.status})`);
     error.status = res.status;
     error.fieldErrors = data?.fieldErrors || null;
+    if (res.status === 401 && token) {
+      // Expired/invalid JWT: drop the stale session once and let the auth layer
+      // route to login. After clearing, subsequent polls send no token, so the
+      // same failure is not broadcast repeatedly.
+      clearAuth();
+      unauthorizedHandler?.();
+    }
     throw error;
   }
 
@@ -79,11 +106,12 @@ export const api = {
     const q = qs.toString();
     return request(`/api/orders${q ? `?${q}` : ''}`);
   },
-  availableOrders: () => request('/api/orders/available'),
+  availableOrders: () => request('/api/orders/available').then((p) => p?.content ?? []),
   getOrder: (id) => request(`/api/orders/${id}`),
   acceptOrder: (id) => request(`/api/orders/${id}/accept`, { method: 'PATCH' }),
   updateOrderStatus: (id, status) => request(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
   cancelOrder: (id) => request(`/api/orders/${id}/cancel`, { method: 'PATCH' }),
+  availability: () => request('/api/partners/availability'),
 
   getLatestLocation: (id) => request(`/api/orders/${id}/location`),
   getLocationHistory: (id) => request(`/api/orders/${id}/history`),

@@ -17,6 +17,11 @@ export function formatKm(km) {
   return `${km.toFixed(1)} km`;
 }
 
+export function formatEtaMinutes(mins) {
+  if (mins == null || Number.isNaN(mins)) return '—';
+  return `~${mins} min`;
+}
+
 export function formatTime(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

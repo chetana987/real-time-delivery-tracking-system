@@ -41,7 +41,9 @@ export default function CustomerDashboard() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState('');
 
-  const [busy, setBusy] = useState(false);
+  // The specific order currently being cancelled, so only its cancel button is
+  // disabled while the request is in flight.
+  const [cancellingId, setCancellingId] = useState(null);
   const [error, setError] = useState('');
 
   const loadActive = useCallback(async () => {
@@ -106,7 +108,7 @@ export default function CustomerDashboard() {
 
   async function cancelOrder(order) {
     if (!window.confirm(`Cancel order #${order.id}? This cannot be undone.`)) return;
-    setBusy(true);
+    setCancellingId(order.id);
     setError('');
     try {
       await api.cancelOrder(order.id);
@@ -115,7 +117,7 @@ export default function CustomerDashboard() {
     } catch (err) {
       setError(err.message);
     } finally {
-      setBusy(false);
+      setCancellingId(null);
     }
   }
 
@@ -136,7 +138,10 @@ export default function CustomerDashboard() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {error}
         </div>
       )}
@@ -148,7 +153,10 @@ export default function CustomerDashboard() {
         </h2>
 
         {activeError && (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <div
+            role="alert"
+            className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          >
             Could not load active orders — retrying automatically. ({activeError})
           </div>
         )}
@@ -176,11 +184,11 @@ export default function CustomerDashboard() {
                     {order.status === 'PLACED' && (
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={cancellingId === order.id}
                         onClick={() => cancelOrder(order)}
                         className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Cancel order
+                        {cancellingId === order.id ? 'Cancelling…' : 'Cancel order'}
                       </button>
                     )}
                   </>
@@ -219,7 +227,10 @@ export default function CustomerDashboard() {
         </div>
 
         {historyError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          >
             Could not load your order history. ({historyError})
             <button
               type="button"

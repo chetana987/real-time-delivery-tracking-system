@@ -12,6 +12,11 @@ import com.deliverytracking.repository.MenuItemRepository;
 import com.deliverytracking.repository.OrderRepository;
 import com.deliverytracking.repository.RestaurantRepository;
 import com.deliverytracking.repository.UserRepository;
+import com.deliverytracking.dto.NearbyPartner;
+import com.deliverytracking.dto.OrderItemRequest;
+import com.deliverytracking.dto.OrderResponse;
+import com.deliverytracking.dto.PlaceOrderRequest;
+import com.deliverytracking.entity.MenuItem;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,11 +24,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -45,6 +54,8 @@ class OrderServiceAcceptanceTest {
     private EntityManager entityManager;
     @Mock
     private PartnerGeoService partnerGeoService;
+    @Mock
+    private PartnerAvailabilityService partnerAvailabilityService;
 
     @InjectMocks
     private OrderService orderService;
@@ -122,5 +133,41 @@ class OrderServiceAcceptanceTest {
 
         assertThatThrownBy(() -> orderService.acceptOrder(1L, 99L))
                 .isInstanceOf(OptimisticLockConflictException.class);
+    }
+
+    @Test
+    void placeOrder_filtersNearbyPartnersByAvailability() {
+        ReflectionTestUtils.setField(orderService, "partnerSearchRadiusKm", 10.0);
+
+        User customer = User.builder().id(10L).email("customer@test.com").role(Role.CUSTOMER).build();
+        Restaurant restaurant = Restaurant.builder().id(20L).name("Test Kitchen").lat(1.0).lng(2.0).build();
+        MenuItem item = MenuItem.builder().id(30L).name("Pizza").price(new BigDecimal("10.00")).build();
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(customer));
+        when(restaurantRepository.findById(20L)).thenReturn(Optional.of(restaurant));
+        when(menuItemRepository.findByRestaurantId(20L)).thenReturn(List.of(item));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(partnerGeoService.findNearestPartners(1.0, 2.0, 10.0, 5)).thenReturn(List.of(
+                NearbyPartner.builder().deliveryPartnerId(99L).distanceKm(1.0).build(),
+                NearbyPartner.builder().deliveryPartnerId(98L).distanceKm(2.0).build()));
+        when(partnerAvailabilityService.isAvailable(99L)).thenReturn(true);
+        when(partnerAvailabilityService.isAvailable(98L)).thenReturn(false);
+
+        PlaceOrderRequest request = PlaceOrderRequest.builder()
+                .restaurantId(20L)
+                .deliveryAddress("42 Home St")
+                .deliveryLatitude(1.5)
+                .deliveryLongitude(2.5)
+                .items(List.of(OrderItemRequest.builder()
+                        .menuItemId(30L)
+                        .quantity(1)
+                        .build()))
+                .build();
+
+        OrderResponse response = orderService.placeOrder(request, 10L);
+
+        assertThat(response.getNearbyPartners())
+                .extracting(NearbyPartner::getDeliveryPartnerId)
+                .containsExactly(99L);
     }
 }

@@ -66,6 +66,9 @@ app:
   partner-search-radius-km: ${PARTNER_SEARCH_RADIUS_KM:10}
   # min interval (s) between location updates from the same delivery partner
   location-update-min-interval-seconds: ${LOCATION_UPDATE_MIN_INTERVAL_SECONDS:2}
+  # assumed average delivery speed (km/h) for the ETA estimate; must be > 0
+  eta:
+    average-speed-kmh: ${ETA_AVERAGE_SPEED_KMH:30}
 
 logging:
   level:

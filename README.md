@@ -21,6 +21,12 @@ React/Vite dashboard and k6 load tests.
   WebSocket/STOMP (SockJS), rate-limited with a Redis token bucket; customers
   follow orders on a Leaflet map with smooth marker movement over the restaurant,
   the partner and the order's actual delivery destination.
+- **Partner availability** — a delivery partner's browser keeps a WebSocket
+  connection open while on the dashboard, so status is `OFFLINE` when unconnected,
+  `AVAILABLE` when online with no in-flight delivery, and `BUSY` while an accepted
+  order is `ACCEPTED`/`PICKED_UP`/`OUT_FOR_DELIVERY`. Customers and admins never
+  register as partners. Nearby-partner selection for new orders only considers
+  online, available delivery partners within the configured radius.
 - **Pagination, sorting & filtering** — every list endpoint returns a
   `PageResponse` envelope; orders, restaurants and menus are filterable and
   sortable (see [PAGINATION.md](PAGINATION.md)).

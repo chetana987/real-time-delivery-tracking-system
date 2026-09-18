@@ -25,6 +25,15 @@ public class LocationUpdateMessage {
     private Double lng;
     @Schema(description = "Delivery partner user id", example = "5")
     private Long deliveryPartnerId;
+    @Schema(description = "Great-circle (haversine) distance in km from the partner's position "
+            + "to the order's delivery destination. Null when the order has no stored destination "
+            + "or the coordinates are missing/invalid.", example = "4.25", nullable = true)
+    private Double distanceKm;
+    @Schema(description = "Estimated time of arrival in whole minutes, "
+            + "computed as distanceKm / average delivery speed. A straight-line estimate only, "
+            + "not road-routing or traffic-aware. Null when the distance is unavailable.",
+            example = "9", nullable = true)
+    private Integer etaMinutes;
     @Schema(description = "When the update was recorded (ISO-8601)", example = "2026-08-05T10:20:00Z")
     private Instant timestamp;
 }

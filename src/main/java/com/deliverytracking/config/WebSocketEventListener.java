@@ -1,6 +1,7 @@
 package com.deliverytracking.config;
 
 import com.deliverytracking.dto.LocationUpdateMessage;
+import com.deliverytracking.entity.Role;
 import com.deliverytracking.service.LocationUpdateBuffer;
 import com.deliverytracking.service.LocationUpdateService;
 import com.deliverytracking.service.PartnerGeoService;
@@ -30,7 +31,8 @@ public class WebSocketEventListener {
     @EventListener
     public void onConnect(SessionConnectedEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        if (accessor.getUser() instanceof StompPrincipal principal) {
+        if (accessor.getUser() instanceof StompPrincipal principal
+                && principal.getRole() == Role.DELIVERY_PARTNER) {
             presenceRegistry.markOnline(principal.getUserId(), accessor.getSessionId());
 
             List<LocationUpdateMessage> buffered = updateBuffer.drain(principal.getUserId());

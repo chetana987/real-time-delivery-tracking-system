@@ -66,7 +66,10 @@ export default function Register() {
           className="space-y-5 rounded-2xl border border-cream-200 bg-white p-6 shadow-sm sm:p-8"
         >
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <div
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+            >
               {error}
             </div>
           )}

@@ -1,10 +1,31 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { api, persistAuth, getStoredUser, clearAuth } from './api';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  api,
+  persistAuth,
+  getStoredUser,
+  clearAuth,
+  setUnauthorizedHandler,
+  clearUnauthorizedHandler,
+} from './api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(() => getStoredUser());
+
+  // Any protected API that returns 401 (expired/invalid JWT) clears the stale
+  // session and routes to login. No refresh-token architecture — just a clean
+  // logout when the token can no longer authenticate.
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      navigate('/login', { replace: true });
+    };
+    setUnauthorizedHandler(handleUnauthorized);
+    return () => clearUnauthorizedHandler();
+  }, [navigate]);
 
   const login = useCallback(async (email, password) => {
     const data = await api.login({ email, password });
