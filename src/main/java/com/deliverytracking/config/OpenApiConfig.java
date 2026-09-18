@@ -31,7 +31,7 @@ public class OpenApiConfig {
                                 REST API for the real-time food/ride delivery tracking system.
 
                                 **Roles**
-                                - `CUSTOMER` — place orders, view own orders.
+                                - `CUSTOMER` — place orders, view own orders, cancel own PLACED orders.
                                 - `DELIVERY_PARTNER` — accept orders, update delivery status, publish live location.
                                 - `ADMIN` — manage restaurants and menu items.
 
@@ -55,7 +55,7 @@ public class OpenApiConfig {
                         new Tag().name("Authentication").description("Public endpoints to create an account and obtain a JWT"),
                         new Tag().name("Restaurants").description("Browse restaurants (public). Create, update and delete are ADMIN only"),
                         new Tag().name("Menu").description("Menu items of a restaurant. Management is ADMIN only"),
-                        new Tag().name("Orders").description("Customers place and view orders; delivery partners accept and update them"),
+                        new Tag().name("Orders").description("Customers place and view orders (and may cancel their own PLACED orders); delivery partners accept and update them"),
                         new Tag().name("Location Tracking").description("Order location via REST. Live updates stream over STOMP WebSocket at /ws"),
                         new Tag().name("Admin").description("Admin-only management operations (same endpoints also listed under their domain group)"),
                         new Tag().name("Health").description("Liveness endpoint")));

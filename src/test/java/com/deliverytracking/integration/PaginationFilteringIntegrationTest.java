@@ -76,6 +76,8 @@ class PaginationFilteringIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(PlaceOrderRequest.builder()
                                 .restaurantId(alphaId)
                                 .deliveryAddress("42 Pagination St")
+                                .deliveryLatitude(18.5204)
+                                .deliveryLongitude(73.8567)
                                 .items(List.of(OrderItemRequest.builder()
                                         .menuItemId(burgerId)
                                         .quantity(1)

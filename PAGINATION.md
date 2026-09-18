@@ -213,6 +213,8 @@ Authorization: Bearer <jwt>
       "status": "DELIVERED",
       "totalAmount": 19.98,
       "deliveryAddress": "221B Baker Street, London",
+      "deliveryLatitude": 51.5237,
+      "deliveryLongitude": -0.1585,
       "createdAt": "2026-08-05T10:00:00Z",
       "updatedAt": "2026-08-05T10:50:00Z"
     }

@@ -5,7 +5,9 @@ import com.deliverytracking.dto.PageParams;
 import com.deliverytracking.dto.PageResponse;
 import com.deliverytracking.entity.LocationUpdate;
 import com.deliverytracking.entity.Order;
+import com.deliverytracking.entity.OrderStatus;
 import com.deliverytracking.entity.User;
+import com.deliverytracking.exception.BadRequestException;
 import com.deliverytracking.exception.OrderNotFoundException;
 import com.deliverytracking.exception.ResourceNotFoundException;
 import com.deliverytracking.exception.UnauthorizedActionException;
@@ -39,6 +41,12 @@ public class LocationUpdateService {
                 .orElseThrow(() -> new OrderNotFoundException(message.getOrderId()));
 
         requireAssignedPartner(order, partnerId);
+
+        OrderStatus status = order.getStatus();
+        if (status == OrderStatus.CANCELLED || status == OrderStatus.DELIVERED) {
+            throw new BadRequestException("Order " + order.getId() + " is " + status
+                    + " and no longer accepts location updates");
+        }
 
         User partner = userRepository.findById(partnerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Delivery partner not found: " + partnerId));

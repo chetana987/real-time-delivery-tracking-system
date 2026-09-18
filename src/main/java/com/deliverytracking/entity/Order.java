@@ -70,6 +70,12 @@ public class Order {
     @Column(nullable = false, length = 500)
     private String deliveryAddress;
 
+    @Column
+    private Double deliveryLatitude;
+
+    @Column
+    private Double deliveryLongitude;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -86,7 +92,7 @@ public class Order {
     private List<OrderItem> items = new ArrayList<>();
 
     private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
-            OrderStatus.PLACED, Set.of(OrderStatus.ACCEPTED),
+            OrderStatus.PLACED, Set.of(OrderStatus.ACCEPTED, OrderStatus.CANCELLED),
             OrderStatus.ACCEPTED, Set.of(OrderStatus.PICKED_UP),
             OrderStatus.PICKED_UP, Set.of(OrderStatus.OUT_FOR_DELIVERY),
             OrderStatus.OUT_FOR_DELIVERY, Set.of(OrderStatus.DELIVERED),

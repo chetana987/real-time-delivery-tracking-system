@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import L from 'leaflet';
 import { api, getToken } from '../lib/api';
 import { createStompClient } from '../lib/stomp';
-import { demoDestination } from '../lib/simulatedRoute';
 import { haversineKm, formatKm, formatTime } from '../lib/geo';
 import { useLeafletMap } from '../hooks/useLeafletMap';
 import { useSmoothMarker } from '../hooks/useSmoothMarker';
@@ -21,9 +20,9 @@ export default function TrackOrder() {
 
   const { containerRef, mapRef } = useLeafletMap({ center: DEFAULT_CENTER, zoom: 13 });
   const { moveTo } = useSmoothMarker(mapRef);
-  const destinationMarkerRef = useRef(null);
   const seededRef = useRef(false);
   const subRef = useRef(null);
+  const clientRef = useRef(null);
 
   const refreshOrder = useCallback(async () => {
     try {
@@ -35,11 +34,60 @@ export default function TrackOrder() {
     }
   }, [orderId]);
 
+  const isTerminal = !!order && (order.status === 'CANCELLED' || order.status === 'DELIVERED');
+
+  // Live tracking only applies once we know the order is still in progress.
+  // Terminal orders (CANCELLED / DELIVERED) never create a WebSocket
+  // subscription, even briefly, and never poll.
+  const liveEligible = !!order && !isTerminal;
+
+  // The delivery destination always comes from the order. A record created
+  // before destinations existed may have no coordinates — we never invent one.
+  const hasDestination =
+    !!order && order.deliveryLatitude != null && order.deliveryLongitude != null;
+  const destination = hasDestination
+    ? { lat: order.deliveryLatitude, lng: order.deliveryLongitude }
+    : null;
+
+  // Poll while the status is unknown or in progress; stop once terminal.
+  const shouldPoll = !(order && isTerminal);
+
   useEffect(() => {
     refreshOrder();
+    if (!shouldPoll) return undefined;
     const poll = setInterval(refreshOrder, 5000);
     return () => clearInterval(poll);
-  }, [refreshOrder]);
+  }, [refreshOrder, shouldPoll]);
+
+  // Terminal orders (CANCELLED / DELIVERED) stop live tracking: no STOMP
+  // subscription and no WebSocket connection.
+  useEffect(() => {
+    if (!isTerminal) return undefined;
+    setConnected(false);
+    setLive(null);
+    try {
+      subRef.current?.unsubscribe();
+    } catch {
+      /* noop */
+    }
+    subRef.current = null;
+    try {
+      clientRef.current?.deactivate();
+    } catch {
+      /* noop */
+    }
+    clientRef.current = null;
+  }, [isTerminal]);
+
+  async function handleCancel() {
+    if (!window.confirm('Cancel this order? This cannot be undone.')) return;
+    try {
+      await api.cancelOrder(orderId);
+      await refreshOrder();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
   // Seed the map once: center at the latest known location (or the restaurant).
   useEffect(() => {
@@ -62,35 +110,58 @@ export default function TrackOrder() {
       });
   }, [order, orderId, mapRef, moveTo]);
 
-  // Destination pin: the demo simulation drives toward a fixed offset.
+  // Restaurant marker + destination pin from the ORDER's real destination.
+  // If the order has no destination coordinates (legacy record), only the
+  // restaurant is shown and no false destination is drawn.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !order || order.restaurantLat == null || order.restaurantLng == null) return undefined;
+    if (!map || !order) return undefined;
 
-    const dest = demoDestination(order.restaurantLat, order.restaurantLng);
-    const icon = L.divIcon({
-      className: 'marker-destination',
-      html: '',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
-    const marker = L.marker([dest.lat, dest.lng], { icon, interactive: false }).addTo(map);
-    destinationMarkerRef.current = marker;
+    const markers = [];
+
+    if (order.restaurantLat != null && order.restaurantLng != null) {
+      markers.push(
+        L.marker([order.restaurantLat, order.restaurantLng], {
+          icon: L.divIcon({
+            className: 'marker-restaurant',
+            html: '<div class="marker-restaurant-dot"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          }),
+          interactive: false,
+        }).addTo(map),
+      );
+    }
+
+    if (hasDestination) {
+      markers.push(
+        L.marker([destination.lat, destination.lng], {
+          icon: L.divIcon({
+            className: 'marker-destination',
+            html: '',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+          interactive: false,
+        }).addTo(map),
+      );
+    }
 
     const t = setTimeout(() => map.invalidateSize(), 100);
     return () => {
       clearTimeout(t);
-      if (destinationMarkerRef.current) {
-        map.removeLayer(destinationMarkerRef.current);
-        destinationMarkerRef.current = null;
-      }
+      markers.forEach((m) => map.removeLayer(m));
     };
-  }, [order, mapRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, hasDestination]);
 
-  // STOMP subscription lifecycle: connect on mount, clean up on unmount.
+  // STOMP subscription lifecycle: only for in-progress orders, connect on mount,
+  // clean up on unmount or when the order reaches a terminal state.
   useEffect(() => {
+    if (!liveEligible) return undefined;
     const token = getToken();
     const client = createStompClient(token);
+    clientRef.current = client;
 
     client.onConnect = () => {
       setConnected(true);
@@ -120,14 +191,14 @@ export default function TrackOrder() {
       } catch {
         /* noop */
       }
+      clientRef.current = null;
       client.deactivate();
     };
-  }, [orderId, moveTo, refreshOrder]);
+  }, [orderId, moveTo, refreshOrder, liveEligible]);
 
   let distanceKm = null;
-  if (order && live) {
-    const dest = demoDestination(order.restaurantLat, order.restaurantLng);
-    distanceKm = haversineKm({ lat: live.lat, lng: live.lng }, dest);
+  if (order && live && destination) {
+    distanceKm = haversineKm(live, destination);
   }
 
   if (loadError) {
@@ -156,6 +227,15 @@ export default function TrackOrder() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {order?.status === 'PLACED' && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-bold text-red-700 transition hover:bg-red-100"
+            >
+              Cancel order
+            </button>
+          )}
           <span
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
               connected ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-600'
@@ -172,6 +252,12 @@ export default function TrackOrder() {
       {error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           {error}
+        </div>
+      )}
+
+      {order && !hasDestination && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+          Delivery destination unavailable — this order has no stored destination.
         </div>
       )}
 

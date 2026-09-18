@@ -74,6 +74,8 @@ public class OrderService {
                 .restaurant(restaurant)
                 .status(OrderStatus.PLACED)
                 .deliveryAddress(request.getDeliveryAddress())
+                .deliveryLatitude(request.getDeliveryLatitude())
+                .deliveryLongitude(request.getDeliveryLongitude())
                 .build();
 
         List<OrderItem> items = request.getItems().stream()
@@ -154,9 +156,33 @@ public class OrderService {
         if (newStatus == OrderStatus.ACCEPTED) {
             throw new BadRequestException("Orders are accepted via the accept endpoint");
         }
+        if (newStatus == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Orders are cancelled via the cancel endpoint");
+        }
 
         requireAssignedPartner(order, partnerId);
         order.transitionTo(newStatus);
+
+        return OrderResponse.from(order);
+    }
+
+    @Transactional
+    public OrderResponse cancelOrder(Long orderId, Long customerId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        boolean isOwner = order.getCustomer() != null && order.getCustomer().getId().equals(customerId);
+        if (!isOwner) {
+            throw new UnauthorizedActionException("Only the customer who placed this order can cancel it");
+        }
+
+        try {
+            order.transitionTo(OrderStatus.CANCELLED);
+            entityManager.flush();
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OptimisticLockConflictException("Order " + orderId
+                    + " was modified concurrently; refresh and retry");
+        }
 
         return OrderResponse.from(order);
     }

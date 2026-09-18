@@ -101,6 +101,10 @@ export default function DeliveryDashboard() {
 
   function startSim(order) {
     if (order.restaurantLat == null || order.restaurantLng == null) return;
+    if (order.deliveryLatitude == null || order.deliveryLongitude == null) {
+      setError('This order has no delivery destination, so simulated movement is unavailable.');
+      return;
+    }
     try {
       stompRef.current?.deactivate();
     } catch {
@@ -108,7 +112,12 @@ export default function DeliveryDashboard() {
     }
     simRef.current = {
       orderId: order.id,
-      route: buildDemoRoute(order.restaurantLat, order.restaurantLng),
+      route: buildDemoRoute(
+        order.restaurantLat,
+        order.restaurantLng,
+        order.deliveryLatitude,
+        order.deliveryLongitude,
+      ),
       step: 0,
     };
 
@@ -262,8 +271,9 @@ export default function DeliveryDashboard() {
       )}
 
       <p className="rounded-xl border border-cream-200 bg-white px-4 py-3 text-xs text-charcoal-600">
-        Simulated movement: the page plays back a demo route from the restaurant and sends a
-        location update every 2 seconds over WebSocket — no phone GPS needed.
+        Simulated movement: the page plays back a demo route from the restaurant toward the order's
+        actual delivery destination and sends a location update every 2 seconds over WebSocket — no
+        phone GPS needed. The simulation never changes the order's stored destination.
       </p>
     </div>
   );

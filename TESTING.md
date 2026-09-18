@@ -94,6 +94,10 @@ src/test/java/com/deliverytracking/
     ├── AbstractIntegrationTest.java                # shared SpringBootTest + MockMvc + DB selection + helpers
     ├── AuthFlowIntegrationTest.java                # register, duplicate email, ADMIN block, validation, login, bad login
     ├── OrderFlowIntegrationTest.java               # place, accept (incl. 409 race), status pipeline, 400/403 paths
+    ├── OrderCancellationIntegrationTest.java        # cancel own PLACED (200), other's order (403), ACCEPTED /
+    │                                               #   DELIVERED / already CANCELLED (400), partner & admin (403),
+    │                                               #   leaves available pool, concurrent cancel race, location
+    │                                               #   updates rejected after cancellation
     ├── RestaurantCrudIntegrationTest.java          # restaurant + menu CRUD, auth rules, validation, delete-with-orders
     ├── GlobalExceptionHandlingIntegrationTest.java # 404/400/401/403 mappings for the @RestControllerAdvice
     ├── OpenApiDocumentationIntegrationTest.java    # /v3/api-docs metadata + tags + JWT scheme, pagination query params
@@ -105,13 +109,18 @@ src/test/java/com/deliverytracking/
 ### Business rules verified
 
 - **Order state machine** (`Order.ALLOWED_TRANSITIONS`): `PLACED → ACCEPTED → PICKED_UP →
-  OUT_FOR_DELIVERY → DELIVERED`; every skip, repeat, null, and transition out of `DELIVERED` /
-  `CANCELLED` throws `InvalidStateTransitionException` → HTTP 400.
+  OUT_FOR_DELIVERY → DELIVERED` plus `PLACED → CANCELLED`; every other skip, repeat, null, and
+  transition out of `DELIVERED` / `CANCELLED` throws `InvalidStateTransitionException` → HTTP 400.
 - **Acceptance race**: the first partner wins (`200`, partner assigned); the second gets
   `OptimisticLockConflictException` → HTTP 409. The `@Version` column protects the update even
   when two requests pass the status check concurrently (covered by `OrderConcurrencyTest`).
 - **Status updates** may only be done by the assigned partner (`403` otherwise); `ACCEPTED` is
   not settable via the status endpoint (`400`).
+- **Cancellation** (`PATCH /api/orders/{id}/cancel`, CUSTOMER only): a customer may cancel
+  their own order only from `PLACED` (`PLACED → CANCELLED` → `200`); cancelling someone else's
+  order → `403`; cancelling an `ACCEPTED` / in-flight / `DELIVERED` order or one that is already
+  `CANCELLED` → `400` (state machine rejects it); partners and admins → `403`. Cancelled orders
+  leave the partner's available pool and stop accepting location updates.
 - **JWT**: subject = email, claims carry `userId` + `role`, expired / wrong-key / malformed
   tokens are rejected; the filter rejects them silently (401 on protected routes).
 - **Auth**: duplicate email → 409; self-registration as ADMIN → 400; bad credentials → 401;
@@ -151,7 +160,7 @@ mvn test
 mvn test -Dtest='OrderStateTransitionTest,OrderServiceAcceptanceTest,OptimisticLockingTest,JwtServiceTest'
 
 # integration tests only (Docker or local MySQL required)
-mvn test -Dtest='AuthFlowIntegrationTest,OrderFlowIntegrationTest,RestaurantCrudIntegrationTest,GlobalExceptionHandlingIntegrationTest,OrderConcurrencyTest,OpenApiDocumentationIntegrationTest,PaginationFilteringIntegrationTest,LocationTrackingIntegrationTest'
+mvn test -Dtest='AuthFlowIntegrationTest,OrderFlowIntegrationTest,OrderCancellationIntegrationTest,RestaurantCrudIntegrationTest,GlobalExceptionHandlingIntegrationTest,OrderConcurrencyTest,OpenApiDocumentationIntegrationTest,PaginationFilteringIntegrationTest,LocationTrackingIntegrationTest'
 
 # one class
 mvn test -Dtest=OrderFlowIntegrationTest

@@ -1,13 +1,16 @@
 package com.deliverytracking.service;
 
 import com.deliverytracking.dto.ApiError;
+import com.deliverytracking.dto.OrderResponse;
 import com.deliverytracking.entity.Order;
 import com.deliverytracking.entity.OrderStatus;
 import com.deliverytracking.entity.Restaurant;
 import com.deliverytracking.entity.Role;
 import com.deliverytracking.entity.User;
 import com.deliverytracking.exception.GlobalExceptionHandler;
+import com.deliverytracking.exception.InvalidStateTransitionException;
 import com.deliverytracking.exception.OptimisticLockConflictException;
+import com.deliverytracking.exception.UnauthorizedActionException;
 import com.deliverytracking.repository.MenuItemRepository;
 import com.deliverytracking.repository.OrderRepository;
 import com.deliverytracking.repository.RestaurantRepository;
@@ -122,5 +125,45 @@ class OptimisticLockingTest {
         assertThat(response.getBody().getStatus()).isEqualTo(409);
         assertThat(response.getBody().getMessage())
                 .isEqualTo("Concurrent modification detected, please refresh and retry");
+    }
+
+    @Test
+    void cancelOrder_placedByOwner_isNotRejectedByOwnershipCheck() {
+        Order order = placedOrder();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        OrderResponse response = orderService.cancelOrder(1L, 10L);
+
+        assertThat(response.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    void cancelOrder_nonOwner_isRejected() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(placedOrder()));
+
+        assertThatThrownBy(() -> orderService.cancelOrder(1L, 999L))
+                .isInstanceOf(UnauthorizedActionException.class);
+    }
+
+    @Test
+    void cancelOrder_alreadyCancelled_isRejected() {
+        Order order = placedOrder();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        orderService.cancelOrder(1L, 10L);
+
+        assertThatThrownBy(() -> orderService.cancelOrder(1L, 10L))
+                .isInstanceOf(InvalidStateTransitionException.class);
+    }
+
+    @Test
+    void cancelOrder_flushVersionConflict_isWrappedAsOptimisticLockConflict() {
+        Order order = placedOrder();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        doThrow(new ObjectOptimisticLockingFailureException(Order.class, 1L)).when(entityManager).flush();
+
+        assertThatThrownBy(() -> orderService.cancelOrder(1L, 10L))
+                .isInstanceOf(OptimisticLockConflictException.class);
     }
 }

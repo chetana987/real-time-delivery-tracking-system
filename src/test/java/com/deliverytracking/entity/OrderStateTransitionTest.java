@@ -78,14 +78,32 @@ class OrderStateTransitionTest {
     }
 
     @Test
-    void cancelled_isFinalAndUnreachableFromPlaced() {
-        assertThatThrownBy(() -> orderIn(OrderStatus.PLACED).transitionTo(OrderStatus.CANCELLED))
-                .isInstanceOf(InvalidStateTransitionException.class);
+    void placed_toCancelled_isAllowed() {
+        Order order = orderIn(OrderStatus.PLACED);
+        order.transitionTo(OrderStatus.CANCELLED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
 
+    @Test
+    void cancelled_isFinalState() {
         Order order = orderIn(OrderStatus.CANCELLED);
         assertThatThrownBy(() -> order.transitionTo(OrderStatus.PLACED))
                 .isInstanceOf(InvalidStateTransitionException.class);
         assertThatThrownBy(() -> order.transitionTo(OrderStatus.ACCEPTED))
+                .isInstanceOf(InvalidStateTransitionException.class);
+        assertThatThrownBy(() -> order.transitionTo(OrderStatus.DELIVERED))
+                .isInstanceOf(InvalidStateTransitionException.class);
+    }
+
+    @Test
+    void ordersPastPlaced_cannotBeCancelled() {
+        assertThatThrownBy(() -> orderIn(OrderStatus.ACCEPTED).transitionTo(OrderStatus.CANCELLED))
+                .isInstanceOf(InvalidStateTransitionException.class);
+        assertThatThrownBy(() -> orderIn(OrderStatus.PICKED_UP).transitionTo(OrderStatus.CANCELLED))
+                .isInstanceOf(InvalidStateTransitionException.class);
+        assertThatThrownBy(() -> orderIn(OrderStatus.OUT_FOR_DELIVERY).transitionTo(OrderStatus.CANCELLED))
+                .isInstanceOf(InvalidStateTransitionException.class);
+        assertThatThrownBy(() -> orderIn(OrderStatus.DELIVERED).transitionTo(OrderStatus.CANCELLED))
                 .isInstanceOf(InvalidStateTransitionException.class);
     }
 

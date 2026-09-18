@@ -51,6 +51,8 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         return objectMapper.writeValueAsString(PlaceOrderRequest.builder()
                 .restaurantId(restaurantId)
                 .deliveryAddress("42 Home St")
+                .deliveryLatitude(18.5204)
+                .deliveryLongitude(73.8567)
                 .items(List.of(OrderItemRequest.builder()
                         .menuItemId(menuItemId)
                         .quantity(quantity)

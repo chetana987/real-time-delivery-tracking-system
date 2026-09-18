@@ -86,3 +86,19 @@ body {
   border: 4px solid #2d2622;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
+
+/* Restaurant marker */
+.marker-restaurant {
+  background: transparent;
+  border: none;
+}
+.marker-restaurant-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #4f9d69;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 4px rgba(79, 157, 105, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}

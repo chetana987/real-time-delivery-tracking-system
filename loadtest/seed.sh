@@ -43,19 +43,19 @@ register() {
 
 restaurant_id() {
   if [ -n "$RESTAURANT_ID" ]; then echo "$RESTAURANT_ID"; return; fi
-  curl -sS "$BASE_URL/api/restaurants" | jq -r '.[0].id // empty'
+  curl -sS "$BASE_URL/api/restaurants" | jq -r '.content[0].id // empty'
 }
 
 menu_item_id() {
   local rid="$1"
   if [ -n "$MENU_ITEM_ID" ]; then echo "$MENU_ITEM_ID"; return; fi
-  curl -sS "$BASE_URL/api/restaurants/$rid/menu" | jq -r '.[0].id // empty'
+  curl -sS "$BASE_URL/api/restaurants/$rid/menu" | jq -r '.content[0].id // empty'
 }
 
 place_order() {
   local token="$1" rid="$2" mid="$3" body
   body=$(jq -nc --argjson restaurantId "$rid" --argjson menuItemId "$mid" \
-    '{restaurantId:$restaurantId,deliveryAddress:"Load Test Address, Bengaluru",items:[{menuItemId:$menuItemId,quantity:1}]}')
+    '{restaurantId:$restaurantId,deliveryAddress:"Load Test Address, Bengaluru",deliveryLatitude:12.9716,deliveryLongitude:77.5946,items:[{menuItemId:$menuItemId,quantity:1}]}')
   curl -sS -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $token" \
     -d "$body" "$BASE_URL/api/orders" | jq -r '.id'
 }

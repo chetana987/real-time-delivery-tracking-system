@@ -153,6 +153,8 @@ class RestaurantCrudIntegrationTest extends AbstractIntegrationTest {
         PlaceOrderRequest request = PlaceOrderRequest.builder()
                 .restaurantId(id)
                 .deliveryAddress("42 Home St")
+                .deliveryLatitude(18.5204)
+                .deliveryLongitude(73.8567)
                 .items(List.of(OrderItemRequest.builder()
                         .menuItemId(menuItemId)
                         .quantity(1)

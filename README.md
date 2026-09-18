@@ -11,12 +11,16 @@ React/Vite dashboard and k6 load tests.
 
 - **Role-based access** — CUSTOMER, DELIVERY_PARTNER and ADMIN accounts with
   self-registration (ADMIN is seeded, not self-registrable).
-- **Order lifecycle** — place orders, delivery partners browse available orders,
-  accept them and drive the status pipeline (`PLACED → ACCEPTED → PICKED_UP →
-  DELIVERED`), with optimistic locking against concurrent accepts.
+- **Order lifecycle** — place orders with a real delivery destination
+  (free-text address plus latitude/longitude, range-validated); delivery partners
+  browse available orders, accept them and drive the status pipeline
+  (`PLACED → ACCEPTED → PICKED_UP → DELIVERED`); customers can cancel their own
+  order while it is still `PLACED` (`PLACED → CANCELLED`), with optimistic
+  locking against concurrent accepts and cancellations.
 - **Real-time tracking** — delivery partners stream live location via
   WebSocket/STOMP (SockJS), rate-limited with a Redis token bucket; customers
-  follow orders on a Leaflet map with smooth marker movement.
+  follow orders on a Leaflet map with smooth marker movement over the restaurant,
+  the partner and the order's actual delivery destination.
 - **Pagination, sorting & filtering** — every list endpoint returns a
   `PageResponse` envelope; orders, restaurants and menus are filterable and
   sortable (see [PAGINATION.md](PAGINATION.md)).

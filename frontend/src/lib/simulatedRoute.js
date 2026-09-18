@@ -1,23 +1,22 @@
 /**
- * Demo-only simulated GPS route for the delivery partner dashboard.
+ * Demo-only simulated GPS movement for the delivery partner dashboard.
+ *
  * There is no real phone GPS in this project, so the partner can play back a
- * fake ride from the restaurant toward a computed destination.
+ * fake ride HEADING TOWARD THE ORDER'S REAL DELIVERY DESTINATION.
+ *
+ * This is intentionally separated from real tracking data:
+ *  - real data = the order's stored restaurant/destination coordinates and the
+ *    location updates flowing over WebSocket/STOMP;
+ *  - demo data  = the interpolated points produced here, which only the partner
+ *    can start explicitly ("Start simulated movement"). The simulation NEVER
+ *    writes to the order's destination — it only publishes STOMP updates.
  */
-
-export function demoDestination(restaurantLat, restaurantLng) {
-  // Roughly ~1.4 km north and ~1.8 km east of the restaurant.
-  return {
-    lat: restaurantLat + 0.0126,
-    lng: restaurantLng + 0.018,
-  };
-}
 
 /**
- * Returns an L-shaped path (drive east first, then north) from the restaurant
- * to the demo destination, as a list of { lat, lng } points.
+ * Returns an L-shaped path (drive east first, then north) from the starting
+ * point toward the actual destination, as a list of { lat, lng } points.
  */
-export function buildDemoRoute(restaurantLat, restaurantLng, steps = 8) {
-  const dest = demoDestination(restaurantLat, restaurantLng);
+export function buildDemoRoute(startLat, startLng, destLat, destLng, steps = 8) {
   const points = [];
   for (let i = 0; i <= steps; i += 1) {
     const t = i / steps;
@@ -25,8 +24,8 @@ export function buildDemoRoute(restaurantLat, restaurantLng, steps = 8) {
     const leg1 = Math.min(t / 0.6, 1);
     const leg2 = Math.max((t - 0.6) / 0.4, 0);
     points.push({
-      lat: restaurantLat + leg2 * (dest.lat - restaurantLat),
-      lng: restaurantLng + leg1 * (dest.lng - restaurantLng),
+      lat: startLat + leg2 * (destLat - startLat),
+      lng: startLng + leg1 * (destLng - startLng),
     });
   }
   return points;

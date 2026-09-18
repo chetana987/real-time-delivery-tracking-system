@@ -36,3 +36,4 @@ application-local.yaml
 *.tmp
 *.bak
 hs_err_pid*
+backend-pid.txt

@@ -63,11 +63,27 @@ export const api = {
   login: (body) => request('/api/auth/login', { method: 'POST', body }),
   register: (body) => request('/api/auth/register', { method: 'POST', body }),
 
-  myOrders: () => request('/api/orders'),
+  restaurants: () => request('/api/restaurants?size=100&sortBy=name').then((p) => p?.content ?? []),
+  restaurantMenu: (id) => request(`/api/restaurants/${id}/menu?size=100&sortBy=name`).then((p) => p?.content ?? []),
+  placeOrder: (body) => request('/api/orders', { method: 'POST', body }),
+
+  // Paginated, filterable order list for the signed-in user (customers see
+  // their own orders; the backend scopes every query to the caller).
+  myOrders: (params = {}) => {
+    const qs = new URLSearchParams();
+    if (params.page != null) qs.set('page', params.page);
+    if (params.size != null) qs.set('size', params.size);
+    if (params.sortBy) qs.set('sortBy', params.sortBy);
+    if (params.direction) qs.set('direction', params.direction);
+    if (params.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return request(`/api/orders${q ? `?${q}` : ''}`);
+  },
   availableOrders: () => request('/api/orders/available'),
   getOrder: (id) => request(`/api/orders/${id}`),
   acceptOrder: (id) => request(`/api/orders/${id}/accept`, { method: 'PATCH' }),
   updateOrderStatus: (id, status) => request(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+  cancelOrder: (id) => request(`/api/orders/${id}/cancel`, { method: 'PATCH' }),
 
   getLatestLocation: (id) => request(`/api/orders/${id}/location`),
   getLocationHistory: (id) => request(`/api/orders/${id}/history`),

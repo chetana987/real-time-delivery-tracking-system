@@ -148,8 +148,9 @@ public class OrderController {
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     @Operation(summary = "Place a new order",
-            description = "Customer only. Computes the total from the requested menu items and creates the "
-                    + "order in PLACED state.")
+            description = "Customer only. Captures the delivery destination (address and coordinates) from "
+                    + "the request, computes the total from the requested menu items and creates the order in "
+                    + "PLACED state.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Order created",
                     content = @Content(schema = @Schema(implementation = OrderResponse.class))),
@@ -190,6 +191,33 @@ public class OrderController {
     public ResponseEntity<OrderResponse> acceptOrder(@PathVariable @Positive Long orderId,
                                                      @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(orderService.acceptOrder(orderId, principal.getId()));
+    }
+
+    @PatchMapping("/{orderId}/cancel")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(summary = "Cancel an order",
+            description = "Customer only. Cancels the caller's own order while it is still in PLACED state. "
+                    + "Once an order has been accepted (or is further along the delivery pipeline) it can no "
+                    + "longer be cancelled. Returns the updated order with status CANCELLED.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order cancelled, status is now CANCELLED",
+                    content = @Content(schema = @Schema(implementation = OrderResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid path variable, or the order cannot be "
+                    + "cancelled from its current status (only PLACED → CANCELLED is allowed)",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid JWT",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Authenticated but not a CUSTOMER, or not the "
+                    + "customer who placed the order",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Order was modified concurrently",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable @Positive Long orderId,
+                                                     @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(orderService.cancelOrder(orderId, principal.getId()));
     }
 
     @PatchMapping("/{orderId}/status")

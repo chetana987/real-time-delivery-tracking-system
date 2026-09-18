@@ -41,6 +41,10 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     @Schema(description = "Delivery address", example = "221B Baker Street, London")
     private String deliveryAddress;
+    @Schema(description = "Latitude of the delivery destination", example = "18.5204")
+    private Double deliveryLatitude;
+    @Schema(description = "Longitude of the delivery destination", example = "73.8567")
+    private Double deliveryLongitude;
     @Schema(description = "When the order was placed (ISO-8601)", example = "2026-08-05T10:00:00Z")
     private Instant createdAt;
     @Schema(description = "When the order was last updated (ISO-8601)", example = "2026-08-05T10:15:00Z")
@@ -62,6 +66,8 @@ public class OrderResponse {
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .deliveryAddress(order.getDeliveryAddress())
+                .deliveryLatitude(order.getDeliveryLatitude())
+                .deliveryLongitude(order.getDeliveryLongitude())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .build();
