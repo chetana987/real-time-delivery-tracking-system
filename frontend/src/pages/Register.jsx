@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../lib/auth';
+import { homePathFor } from '../lib/routing';
 
 const ROLES = [
   { value: 'CUSTOMER', label: 'Customer', hint: 'I want to order food' },
   { value: 'DELIVERY_PARTNER', label: 'Delivery Partner', hint: 'I want to deliver orders' },
 ];
-
-function homeFor(user) {
-  return user?.role === 'CUSTOMER' ? '/customer' : '/partner';
-}
 
 export default function Register() {
   const { user, register } = useAuth();
@@ -24,7 +21,10 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) navigate(homeFor(user), { replace: true });
+    if (user) {
+      const dest = homePathFor(user);
+      if (dest) navigate(dest, { replace: true });
+    }
   }, [user, navigate]);
 
   async function handleSubmit(e) {

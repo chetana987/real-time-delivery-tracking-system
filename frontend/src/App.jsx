@@ -1,20 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
-import ProtectedRoute from './lib/ProtectedRoute';
+import ProtectedRoute, { RoleRoute } from './lib/ProtectedRoute';
+import { homePathFor } from './lib/routing';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CustomerDashboard from './pages/CustomerDashboard';
 import DeliveryDashboard from './pages/DeliveryDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import TrackOrder from './pages/TrackOrder';
-
-function homePathFor(user) {
-  return user?.role === 'CUSTOMER' ? '/customer' : '/partner';
-}
 
 function HomeRedirect() {
   const { user } = useAuth();
-  return <Navigate to={user ? homePathFor(user) : '/login'} replace />;
+  const dest = homePathFor(user) ?? '/login';
+  return <Navigate to={dest} replace />;
 }
 
 function Shell({ children }) {
@@ -37,21 +36,31 @@ export default function App() {
           <Route
             path="/customer"
             element={
-              <ProtectedRoute>
+              <RoleRoute allow={['CUSTOMER']}>
                 <Shell>
                   <CustomerDashboard />
                 </Shell>
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/partner"
             element={
-              <ProtectedRoute>
+              <RoleRoute allow={['DELIVERY_PARTNER']}>
                 <Shell>
                   <DeliveryDashboard />
                 </Shell>
-              </ProtectedRoute>
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RoleRoute allow={['ADMIN']}>
+                <Shell>
+                  <AdminDashboard />
+                </Shell>
+              </RoleRoute>
             }
           />
           <Route

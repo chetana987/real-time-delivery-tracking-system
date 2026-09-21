@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { homePathFor, roleLabel } from '../lib/routing';
 
 function Logo() {
   return (
@@ -16,7 +17,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const homePath = user?.role === 'CUSTOMER' ? '/customer' : '/partner';
+  const homePath = user ? (homePathFor(user) ?? '/login') : '/login';
 
   function handleLogout() {
     logout();
@@ -26,7 +27,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-cream-200 bg-cream-50/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
-        <Link to={user ? homePath : '/login'} className="flex items-center gap-2.5">
+        <Link to={homePath} className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-terra-500 text-white">
             <Logo />
           </span>
@@ -39,9 +40,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold leading-tight">{user.name}</p>
-              <p className="text-xs leading-tight text-charcoal-600">
-                {user.role === 'CUSTOMER' ? 'Customer' : 'Delivery Partner'}
-              </p>
+              <p className="text-xs leading-tight text-charcoal-600">{roleLabel(user.role)}</p>
             </div>
             <span className="hidden h-8 w-px bg-cream-200 sm:block" />
             <button
