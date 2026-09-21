@@ -35,6 +35,26 @@ React/Vite dashboard and k6 load tests.
 - **Production-minded ops** — Docker Compose for MySQL + Redis + backend,
   Testcontainers integration tests, GitHub Actions CI, Swagger/OpenAPI docs.
 
+## Open Source
+
+This project is open source and available for learning, experimentation, and development.
+
+You are welcome to:
+- Explore the source code
+- Suggest improvements
+- Report bugs or issues
+- Submit changes and enhancements
+
+## Contributing
+
+Contributions, improvements, and suggestions are welcome.
+
+If you would like to make changes:
+1. Fork the repository.
+2. Create a new branch for your changes.
+3. Make and test your changes.
+4. Submit a pull request with a clear description of the changes.
+
 ## Tech stack
 
 | Layer    | Technology |
@@ -164,6 +184,12 @@ Continuous integration runs on every push to `main` and every PR targeting
 - **build** — JDK 21, cached Maven repo, `mvn clean verify` (red on any compile
   error or failing test).
 - **docker-build** — verifies the Docker image builds; never pushed.
+
+## Created By
+
+**Chetana Mahajan**
+
+Java Full Stack Developer | Software Testing Enthusiast
 
 ## License
 
